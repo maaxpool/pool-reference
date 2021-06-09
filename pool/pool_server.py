@@ -59,7 +59,7 @@ class PoolServer:
         return inner
 
     async def index(self, _) -> web.Response:
-        return web.Response(text="Chia reference pool")
+        return web.Response(text="MaxiPool test pool")
 
     async def get_pool_info(self, _) -> web.Response:
         res: PoolInfo = PoolInfo(
