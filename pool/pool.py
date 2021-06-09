@@ -61,7 +61,7 @@ class Pool:
 
         # TODO(pool): potentially tweak these numbers for security and performance
         # This is what the user enters into the input field. This exact value will be stored on the blockchain
-        self.pool_url = "http://10.0.0.45"
+        self.pool_url = "http://test1.maxipool.net"
         self.min_difficulty = uint64(10)  # 10 difficulty is about 1 proof a day per plot
         self.default_difficulty: uint64 = uint64(10)
 
@@ -76,17 +76,17 @@ class Pool:
 
         # Using 2164248527
         self.default_target_puzzle_hash: bytes32 = bytes32(
-            decode_puzzle_hash("txch16mhvz4cpzwq9dmds5lkjk22h34wftcc0xx728zmqwnla2wy2gl0qancuzs")
+            decode_puzzle_hash("txch15eadwu35q65jkt4p3h6mtq38qwyhe0ntzhcecxpah5sgj2yfynfqz4kxqj")
         )
 
         # The pool fees will be sent to this address. This MUST be on a different key than the target_puzzle_hash,
         # otherwise, the fees will be sent to the users. Using 690783650
         self.pool_fee_puzzle_hash: bytes32 = bytes32(
-            decode_puzzle_hash("txch1ww8m7ttxuc2ng6qlthk609hkrt25mklcuqn882rkngnygeuu8fks36ckvs")
+            decode_puzzle_hash("txch1c67654nr82v2evtfht88lkkzhu4a80dgmk8cnx25mrppcrl4xlaqugv8z6")
         )
 
         # This is the wallet fingerprint and ID for the wallet spending the funds from `self.default_target_puzzle_hash`
-        self.wallet_fingerprint = 2164248527
+        self.wallet_fingerprint = 140967488
         self.wallet_id = "1"
 
         # We need to check for slow farmers. If farmers cannot submit proofs in time, they won't be able to win
