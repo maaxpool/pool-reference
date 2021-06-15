@@ -244,7 +244,7 @@ class PGStore:
 
     async def add_farmer_record(self, farmer_record: FarmerRecord):
         await self.connection.execute(
-            f"INSERT OR REPLACE INTO farmer VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            f"INSERT OR REPLACE INTO farmer VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
             *(
                 farmer_record.launcher_id.hex(),
                 farmer_record.p2_singleton_puzzle_hash.hex(),
@@ -261,7 +261,7 @@ class PGStore:
 
     async def get_farmer_record(self, launcher_id: bytes32) -> Optional[FarmerRecord]:
         row = await self.connection.fetchrow(
-            "SELECT * from farmer where launcher_id=?",
+            "SELECT * from farmer where launcher_id=$1",
             launcher_id.hex(),
         )
         if row is None:
@@ -270,7 +270,7 @@ class PGStore:
 
     async def update_difficulty(self, launcher_id: bytes32, difficulty: uint64):
         await self.connection.execute(
-            f"UPDATE farmer SET difficulty=? WHERE launcher_id=?", (difficulty, launcher_id.hex())
+            f"UPDATE farmer SET difficulty=$1 WHERE launcher_id=$2", difficulty, launcher_id.hex()
         )
 
     async def update_singleton(
@@ -285,13 +285,13 @@ class PGStore:
         else:
             entry = (bytes(singleton_tip), bytes(singleton_tip_state), 0, launcher_id)
         await self.connection.execute(
-            f"UPDATE farmer SET singleton_tip=?, singleton_tip_state=?, is_pool_member=? WHERE launcher_id=?",
+            f"UPDATE farmer SET singleton_tip=$1, singleton_tip_state=$2, is_pool_member=$3 WHERE launcher_id=$4",
             *entry,
         )
 
     async def get_pay_to_singleton_phs(self) -> Set[bytes32]:
         all_phs: Set[bytes32] = set()
-        async for row in self.connection.cursor("SELECT p2_singleton_puzzle_hash from farmer"):
+        for row in await self.connection.fetch("SELECT p2_singleton_puzzle_hash from farmer"):
             all_phs.add(bytes32(bytes.fromhex(row[0])))
         return all_phs
 
@@ -299,14 +299,14 @@ class PGStore:
         if len(puzzle_hashes) == 0:
             return []
         puzzle_hashes_db = tuple([ph.hex() for ph in list(puzzle_hashes)])
-        return [self._row_to_farmer_record(row) async for row in self.connection.cursor(
-            f'SELECT * from farmer WHERE p2_singleton_puzzle_hash in ({"?," * (len(puzzle_hashes_db) - 1)}?) ',
+        return [self._row_to_farmer_record(row) for row in await self.connection.fetch(
+            f'SELECT * from farmer WHERE p2_singleton_puzzle_hash in (${",$".join(map(str, range(1, len(puzzle_hashes_db)+1)))}) ',
             *puzzle_hashes_db,
         )]
 
     async def get_farmer_points_and_payout_instructions(self) -> List[Tuple[uint64, bytes]]:
         accumulated: Dict[bytes32, uint64] = {}
-        async for row in self.connection.cursor(f"SELECT points, pool_payout_instructions from farmer"):
+        for row in await self.connection.fetch(f"SELECT points, pool_payout_instructions from farmer"):
             points: uint64 = uint64(row[0])
             ph: bytes32 = bytes32(bytes.fromhex(row[1]))
             if ph in accumulated:
@@ -324,14 +324,14 @@ class PGStore:
 
     async def add_partial(self, launcher_id: bytes32, timestamp: uint64, difficulty: uint64):
         await self.connection.execute(
-            "INSERT into partial VALUES(?, ?, ?)",
+            "INSERT into partial VALUES($1, $2, $3)",
             launcher_id.hex(), timestamp, difficulty,
         )
 
     async def get_recent_partials(self, launcher_id: bytes32, count: int) -> List[Tuple[uint64, uint64]]:
         ret: List[Tuple[uint64, uint64]] = [(uint64(timestamp), uint64(difficulty))
-                                            async for timestamp, difficulty in self.connection.cursor(
-                "SELECT timestamp, difficulty from partial WHERE launcher_id=? ORDER BY timestamp DESC LIMIT ?",
+                                            for timestamp, difficulty in await self.connection.fetch(
+                "SELECT timestamp, difficulty from partial WHERE launcher_id=$1 ORDER BY timestamp DESC LIMIT $2",
                 launcher_id.hex(), count,
             )]
         return ret
