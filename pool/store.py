@@ -233,13 +233,14 @@ class PGStore:
                 "CREATE TABLE IF NOT EXISTS farmer("
                 "launcher_id text PRIMARY KEY,"
                 " p2_singleton_puzzle_hash text,"
+                " delay_time bigint,"
+                " delay_puzzle_hash text,"
                 " authentication_public_key text,"
-                " authentication_public_key_timestamp bigint,"
                 " singleton_tip bytea,"
                 " singleton_tip_state bytea,"
                 " points bigint,"
                 " difficulty bigint,"
-                " pool_payout_instructions text,"
+                " payout_instructions text,"
                 " is_pool_member smallint)"
             )
         )
@@ -256,17 +257,18 @@ class PGStore:
 
     async def add_farmer_record(self, farmer_record: FarmerRecord):
         await self.connection.execute(
-            f"INSERT OR REPLACE INTO farmer VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
+            f"INSERT OR REPLACE INTO farmer VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)",
             *(
                 farmer_record.launcher_id.hex(),
                 farmer_record.p2_singleton_puzzle_hash.hex(),
+                farmer_record.delay_time,
+                farmer_record.delay_puzzle_hash.hex(),
                 bytes(farmer_record.authentication_public_key).hex(),
-                farmer_record.authentication_public_key_timestamp,
                 bytes(farmer_record.singleton_tip),
                 bytes(farmer_record.singleton_tip_state),
                 farmer_record.points,
                 farmer_record.difficulty,
-                farmer_record.pool_payout_instructions,
+                farmer_record.payout_instructions,
                 int(farmer_record.is_pool_member),
             ),
         )
@@ -293,9 +295,9 @@ class PGStore:
             is_pool_member: bool,
     ):
         if is_pool_member:
-            entry = (bytes(singleton_tip), bytes(singleton_tip_state), 1, launcher_id)
+            entry = (bytes(singleton_tip), bytes(singleton_tip_state), 1, launcher_id.hex())
         else:
-            entry = (bytes(singleton_tip), bytes(singleton_tip_state), 0, launcher_id)
+            entry = (bytes(singleton_tip), bytes(singleton_tip_state), 0, launcher_id.hex())
         await self.connection.execute(
             f"UPDATE farmer SET singleton_tip=$1, singleton_tip_state=$2, is_pool_member=$3 WHERE launcher_id=$4",
             *entry,
@@ -318,7 +320,7 @@ class PGStore:
 
     async def get_farmer_points_and_payout_instructions(self) -> List[Tuple[uint64, bytes]]:
         accumulated: Dict[bytes32, uint64] = {}
-        for row in await self.connection.fetch(f"SELECT points, pool_payout_instructions from farmer"):
+        for row in await self.connection.fetch(f"SELECT points, payout_instructions from farmer"):
             points: uint64 = uint64(row[0])
             ph: bytes32 = bytes32(bytes.fromhex(row[1]))
             if ph in accumulated:
@@ -338,6 +340,11 @@ class PGStore:
         await self.connection.execute(
             "INSERT into partial VALUES($1, $2, $3)",
             launcher_id.hex(), timestamp, difficulty,
+        )
+        row = await self.connection.fetchrow(f"SELECT points from farmer where launcher_id=$1", launcher_id.hex())
+        points = row[0]
+        await self.connection.execute(
+            f"UPDATE farmer set points=$1 where launcher_id=$2", points + difficulty, launcher_id.hex()
         )
 
     async def get_recent_partials(self, launcher_id: bytes32, count: int) -> List[Tuple[uint64, uint64]]:
