@@ -221,6 +221,9 @@ class SqlitePoolStore(AbstractPoolStore):
                 "SELECT launcher_id, points, strftime('%s', 'now'), delay_time from farmer WHERE points != 0"
             )
         )
+	await cursor.close()
+        await self.connection.commit()
+
 
     async def clear_farmer_points(self) -> None:
         cursor = await self.connection.execute(f"UPDATE farmer set points=0")
