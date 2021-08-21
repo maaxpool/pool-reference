@@ -58,6 +58,7 @@ class Snapshot:
                 self.log.info(f"Create snapshot of the farmers")
                 # keep a snapshot of the points collected by the farmer
                 await self.store.snapshot_farmer_points()
+                await self.store.snapshot_pool_points()
                 await asyncio.sleep(self.snapshot_interval)
 
             except asyncio.CancelledError:
