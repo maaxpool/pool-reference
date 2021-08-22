@@ -76,7 +76,8 @@ class SqlitePoolStore(AbstractPoolStore):
                 "launcher_id text,"
                 "points bigint,"
                 "delay_time bigint,"
-                "timestamp bigint)"
+                "timestamp bigint,"
+                "ss_type smallint)"
             )
         )
         await self.connection.execute("CREATE INDEX IF NOT EXISTS ss_launcher_id_index on points_ss(launcher_id)")
@@ -249,13 +250,12 @@ class SqlitePoolStore(AbstractPoolStore):
             ret.append((total_points, ph, launcher_points[ph]))
         return ret
 
-    async def snapshot_farmer_points(self) -> None:
+    async def snapshot_farmer_points(self, ss_type: int) -> None:
         cursor = await self.connection.execute(
-            (
-                "INSERT into points_ss(launcher_id, points, timestamp, delay_time)"
-                "SELECT launcher_id, points, strftime('%s', 'now'), delay_time from farmer"
-                "WHERE points != 0"
-            )
+            f"INSERT into points_ss(launcher_id, points, timestamp, delay_time, ss_type)"
+             "SELECT launcher_id, points, strftime('%s', 'now'), delay_time, ? from farmer"
+             "WHERE points != 0",
+            ss_type
         )
         await cursor.close()
         await self.connection.commit()
@@ -263,8 +263,8 @@ class SqlitePoolStore(AbstractPoolStore):
     async def snapshot_farmer_points(self) -> None:
         cursor = await self.connection.execute(
             (
-                "INSERT into points_ss(launcher_id, points, timestamp, delay_time)"
-                "SELECT 'pool_total', SUM(points), strftime('%s', 'now'), MAX(delay_time) from farmer"
+                "INSERT into points_ss(launcher_id, points, timestamp, delay_time, ss_type)"
+                "SELECT 'pool_total', SUM(points), strftime('%s', 'now'), MAX(delay_time), 2 from farmer"
             )
         )
         await cursor.close()
@@ -273,8 +273,8 @@ class SqlitePoolStore(AbstractPoolStore):
     async def clear_farmer_points(self) -> None:
         cursor = await self.connection.execute(
             (
-                "INSERT into points_ss(launcher_id, points, timestamp, delay_time)"
-                "SELECT 'pool_clear', SUM(points), strftime('%s', 'now'), MAX(delay_time) from farmer"
+                "INSERT into points_ss(launcher_id, points, timestamp, delay_time, ss_type)"
+                "SELECT 'pool_clear', SUM(points), strftime('%s', 'now'), MAX(delay_time), 1 from farmer"
             )
         )
         await cursor.close()

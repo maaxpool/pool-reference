@@ -13,7 +13,6 @@ from chia.util.chia_logging import initialize_logging
 from pool.store.abstract import AbstractPoolStore
 from pool.store.pg_store import PGStore
 
-
 class Snapshot:
     def __init__(self, config: Dict, constants: ConsensusConstants, pool_store: Optional[AbstractPoolStore] = None):
         self.log = logging
@@ -57,7 +56,7 @@ class Snapshot:
             try:
                 self.log.info(f"Create snapshot of the farmers")
                 # keep a snapshot of the points collected by the farmer
-                await self.store.snapshot_farmer_points()
+                await self.store.snapshot_farmer_points(0)
                 await self.store.snapshot_pool_points()
                 await asyncio.sleep(self.snapshot_interval)
 
