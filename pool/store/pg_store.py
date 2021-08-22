@@ -214,6 +214,12 @@ class PGStore(AbstractPoolStore):
 
     async def clear_farmer_points(self) -> None:
         await self.connection.execute(f"UPDATE maxi_farmer set points=0")
+        await self.connection.execute(
+            (
+                "INSERT into maxi_points_ss (launcher_id, points, timestamp, delay_time)"
+                "VALUES ('pool_clear', 0, trunc(extract(epoch from now())), 0)"
+            )
+        )
 
     async def add_partial(self, launcher_id: bytes32, harvester_id: bytes32, timestamp: uint64, difficulty: uint64):
         await self.connection.execute(
