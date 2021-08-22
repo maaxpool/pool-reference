@@ -206,7 +206,7 @@ class Payment:
                             await self.pending_payments.put(additions_sub_list.copy())
 
                         # keep a snapshot of the points collected by the farmer
-                        await self.store.snapshot_farmer_points()
+                        await self.store.snapshot_farmer_points(1)
 
                         # Subtract the points from each farmer
                         await self.store.clear_farmer_points()
