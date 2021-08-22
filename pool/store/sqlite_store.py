@@ -236,14 +236,14 @@ class SqlitePoolStore(AbstractPoolStore):
         await self.connection.commit()
 
     async def clear_farmer_points(self) -> None:
-        cursor = await self.connection.execute(f"UPDATE farmer set points=0")
-        await cursor.close()
         cursor = await self.connection.execute(
             (
                 "INSERT into points_ss(launcher_id, points, timestamp, delay_time)"
-                "VALUES ('pool_clear', 0, strftime('%s', 'now'), 0)"
+                "SELECT 'pool_clear', SUM(points), strftime('%s', 'now'), MAX(delay_time) from farmer"
             )
         )
+        await cursor.close()
+        cursor = await self.connection.execute(f"UPDATE farmer set points=0")
         await cursor.close()
         await self.connection.commit()
 
