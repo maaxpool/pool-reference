@@ -232,7 +232,7 @@ class SqlitePoolStore(AbstractPoolStore):
             )
         )
 
-    async def snapshot_farmer_points(self) -> None:
+    async def snapshot_farmer_points(self, ss_type: int) -> None:
         cursor = await self.connection.execute(
             (
 
