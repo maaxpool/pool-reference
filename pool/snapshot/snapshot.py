@@ -30,7 +30,7 @@ class Snapshot:
         self.config = config
         self.constants = constants
 
-        self.store: AbstractPoolStore = pool_store or PGStore()
+        self.store: AbstractPoolStore = pool_store or SqlitePoolStore()
 
         # Interval for taking snapshot of farmer's points
         self.snapshot_interval = pool_config["snapshot_interval"]
