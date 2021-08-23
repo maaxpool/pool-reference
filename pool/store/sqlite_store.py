@@ -218,9 +218,8 @@ class SqlitePoolStore(AbstractPoolStore):
     async def snapshot_farmer_points(self, ss_type: int) -> None:
         cursor = await self.connection.execute(
             f"INSERT into points_ss(launcher_id, points, timestamp, delay_time, ss_type)"
-            "SELECT launcher_id, points, strftime('%s', 'now'), delay_time, ? from farmer"
-            "WHERE points != 0",
-            ss_type,
+            "SELECT launcher_id, points, strftime('%s', 'now'), delay_time, ? from farmer WHERE points != 0",
+            ss_type
         )
         await cursor.close()
         await self.connection.commit()
@@ -228,7 +227,7 @@ class SqlitePoolStore(AbstractPoolStore):
     async def snapshot_pool_points(self) -> None:
         cursor = await self.connection.execute(
             (
-                "INSERT into points_ss(launcher_id, points, timestamp, delay_time,ss_type)"
+                "INSERT into points_ss(launcher_id, points, timestamp, delay_time, ss_type)"
                 "SELECT 'pool_total', SUM(points), strftime('%s', 'now'), MAX(delay_time), 2 from farmer"
             )
         )
