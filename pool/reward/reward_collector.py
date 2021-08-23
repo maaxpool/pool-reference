@@ -23,7 +23,8 @@ from chia.pools.pool_puzzles import (
 
 from pool.singleton import create_absorb_transaction, get_singleton_state, get_coin_spend
 from pool.store.abstract import AbstractPoolStore
-from .store.sqlite_store import SqlitePoolStore
+from pool.store.sqlite_store import SqlitePoolStore
+
 
 from ..reward_record import RewardRecord
 
