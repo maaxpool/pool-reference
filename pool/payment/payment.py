@@ -21,7 +21,7 @@ from chia.util.chia_logging import initialize_logging
 from chia.wallet.transaction_record import TransactionRecord
 
 from pool.store.abstract import AbstractPoolStore
-from .store.sqlite_store import SqlitePoolStore
+from pool.store.sqlite_store import SqlitePoolStore
 
 from ..pay_record import PaymentRecord
 
