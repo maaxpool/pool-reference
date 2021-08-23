@@ -20,6 +20,7 @@ class PGStore(AbstractPoolStore):
     """
     Pool store based on SQLite.
     """
+
     def __init__(self):
         super().__init__()
         self.connection: Optional[asyncpg.Pool] = None
@@ -75,11 +76,12 @@ class PGStore(AbstractPoolStore):
                 "launcher_id text,  /* farmer */"
                 "points bigint,     /* farmer's points */"
                 "delay_time bigint, /* delayed time */"
-                "timestamp bigint,  /* snapshot timestamp */
-                "ss_type smallint   /* 0: normal snapshot, 1: clear snapshot, 2: pool total */
-                )"
+                "timestamp bigint,  /* snapshot timestamp */"
+                "ss_type smallint /* 0: normal snapshot, 1: clear snapshot, 2: pool total */"
+                ")"
             )
         )
+
         await self.connection.execute("CREATE INDEX IF NOT EXISTS ss_launcher_id_index on maxi_points_ss(launcher_id)")
 
         # create rewards tx table
@@ -95,7 +97,7 @@ class PGStore(AbstractPoolStore):
         )
         await self.connection.execute("CREATE INDEX IF NOT EXISTS re_launcher_id_index on maxi_rewards_tx(launcher_id)")
 
-    @staticmethod
+    @ staticmethod
     def _row_to_farmer_record(row) -> FarmerRecord:
         return FarmerRecord(
             bytes.fromhex(row[0]),
@@ -133,7 +135,7 @@ class PGStore(AbstractPoolStore):
         )
 
     async def get_farmer_record(self, launcher_id: bytes32) -> Optional[FarmerRecord]:
-        row = await self.connection.fetchrow(
+        row=await self.connection.fetchrow(
             "SELECT * from maxi_farmer where launcher_id=$1",
             launcher_id.hex(),
         )
@@ -154,9 +156,9 @@ class PGStore(AbstractPoolStore):
             is_pool_member: bool,
     ):
         if is_pool_member:
-            entry = (bytes(singleton_tip), bytes(singleton_tip_state), 1, launcher_id.hex())
+            entry=(bytes(singleton_tip), bytes(singleton_tip_state), 1, launcher_id.hex())
         else:
-            entry = (bytes(singleton_tip), bytes(singleton_tip_state), 0, launcher_id.hex())
+            entry=(bytes(singleton_tip), bytes(singleton_tip_state), 0, launcher_id.hex())
         await self.connection.execute(
             f"UPDATE maxi_farmer SET singleton_tip=$1, singleton_tip_state=$2, is_pool_member=$3 WHERE launcher_id=$4",
             *entry,

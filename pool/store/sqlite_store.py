@@ -14,6 +14,7 @@ from ..util import RequestMetadata
 from ..pay_record import PaymentRecord
 from ..reward_record import RewardRecord
 
+
 class SqlitePoolStore(AbstractPoolStore):
     """
     Pool store based on SQLite.
@@ -96,7 +97,6 @@ class SqlitePoolStore(AbstractPoolStore):
         await self.connection.execute("CREATE INDEX IF NOT EXISTS re_launcher_id_index on rewards_tx(launcher_id)")
 
         await self.connection.commit()
-
 
     @staticmethod
     def _row_to_farmer_record(row) -> FarmerRecord:
@@ -218,12 +218,19 @@ class SqlitePoolStore(AbstractPoolStore):
     async def snapshot_farmer_points(self, ss_type: int) -> None:
         cursor = await self.connection.execute(
             f"INSERT into points_ss(launcher_id, points, timestamp, delay_time, ss_type)"
-             "SELECT launcher_id, points, strftime('%s', 'now'), delay_time, ? from farmer"
-             "WHERE points != 0",
+            "SELECT launcher_id, points, strftime('%s', 'now'), delay_time, ? from farmer"
+            "WHERE points != 0",
             ss_type
         )
         await cursor.close()
         await self.connection.commit()
+
+        await self.connection.execute(
+            (
+                "INSERT into points_ss (launcher_id, points, timestamp, delay_time, ss_type)"
+                "SELECT 'pool_total', SUM(points), trunc(extract(epoch from now())), MAX(delay_time), 2 from maxi_farmer"
+            )
+        )
 
     async def snapshot_farmer_points(self) -> None:
         cursor = await self.connection.execute(
@@ -236,7 +243,15 @@ class SqlitePoolStore(AbstractPoolStore):
         await cursor.close()
         await self.connection.commit()
 
-
+    async def snapshot_pool_points(self) -> None:
+        cursor = await self.connection.execute(
+            (
+                "INSERT into points_ss(launcher_id, points, timestamp, delay_time,ss_type)"
+                "SELECT 'pool_total', SUM(points), strftime('%s', 'now'), MAX(delay_time), 2 from farmer"
+            )
+        )
+        await cursor.close()
+        await self.connection.commit()
 
     async def clear_farmer_points(self) -> None:
         cursor = await self.connection.execute(
@@ -279,14 +294,14 @@ class SqlitePoolStore(AbstractPoolStore):
         cursor = await self.connection.execute(
             f"INSERT into payment (launcher_id, amount, payment_type, timestamp, points, txid, note) VALUES(?, ?, ?, ?, ?, ?, ?)",
             (
-		payment.launcher_id.hex(),
-		payment.payment_amount,
-		payment.payment_type,
-		payment.timestamp,
-		payment.points,
-		payment.txid,
-		payment.note
-	    ),
+                payment.launcher_id.hex(),
+                payment.payment_amount,
+                payment.payment_type,
+                payment.timestamp,
+                payment.points,
+                payment.txid,
+                payment.note
+            ),
         )
         await cursor.close()
         await self.connection.commit()
