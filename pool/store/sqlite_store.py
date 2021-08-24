@@ -78,7 +78,7 @@ class SqlitePoolStore(AbstractPoolStore):
                 "points bigint,"
                 "delay_time bigint,"
                 "timestamp bigint,"
-                "ss_type smallint)"
+                "ss_type smallint /* 0: normal snapshot, 1: clear snapshot, 2: pool total */)"
             )
         )
         await self.connection.execute("CREATE INDEX IF NOT EXISTS ss_launcher_id_index on points_ss(launcher_id)")
