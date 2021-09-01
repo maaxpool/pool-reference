@@ -120,8 +120,8 @@ class Pool:
         self.pool_fee_puzzle_hash: bytes32 = bytes32(decode_puzzle_hash(pool_config["pool_fee_address"]))
 
         # This is the wallet fingerprint and ID for the wallet spending the funds from `self.default_target_puzzle_hash`
-        self.wallet_fingerprint = pool_config["wallet_fingerprint"]
-        self.wallet_id = pool_config["wallet_id"]
+        # self.wallet_fingerprint = pool_config["wallet_fingerprint"]
+        # self.wallet_id = pool_config["wallet_id"]
 
         # We need to check for slow farmers. If farmers cannot submit proofs in time, they won't be able to win
         # any rewards either. This number can be tweaked to be more or less strict. More strict ensures everyone
@@ -162,7 +162,7 @@ class Pool:
         self.blockchain_state = {"peak": None}
 
         # Whether or not the wallet is synced (required to make payments)
-        self.wallet_synced = False
+        # self.wallet_synced = False
 
         # The fee to pay ( In mojo ) when claiming a block reward
         self.claim_fee: uint64 = uint64(pool_config.get("block_claim_fee", 0))
@@ -180,8 +180,8 @@ class Pool:
 
         self.node_rpc_client: Optional[FullNodeRpcClient] = None
         self.node_rpc_port = pool_config["node_rpc_port"]
-        self.wallet_rpc_client: Optional[WalletRpcClient] = None
-        self.wallet_rpc_port = pool_config["wallet_rpc_port"]
+        # self.wallet_rpc_client: Optional[WalletRpcClient] = None
+        # self.wallet_rpc_port = pool_config["wallet_rpc_port"]
 
     async def start(self):
         await self.store.connect()
@@ -191,16 +191,16 @@ class Pool:
         self.node_rpc_client = await FullNodeRpcClient.create(
             self_hostname, uint16(self.node_rpc_port), DEFAULT_ROOT_PATH, self.config
         )
-        self.wallet_rpc_client = await WalletRpcClient.create(
-            self.config["self_hostname"], uint16(self.wallet_rpc_port), DEFAULT_ROOT_PATH, self.config
-        )
+        # self.wallet_rpc_client = await WalletRpcClient.create(
+        #     self.config["self_hostname"], uint16(self.wallet_rpc_port), DEFAULT_ROOT_PATH, self.config
+        # )
         self.blockchain_state = await self.node_rpc_client.get_blockchain_state()
-        res = await self.wallet_rpc_client.log_in_and_skip(fingerprint=self.wallet_fingerprint)
-        if not res["success"]:
-            raise ValueError(f"Error logging in: {res['error']}. Make sure your config fingerprint is correct.")
-        self.log.info(f"Logging in: {res}")
-        res = await self.wallet_rpc_client.get_wallet_balance(self.wallet_id)
-        self.log.info(f"Obtaining balance: {res}")
+        # res = await self.wallet_rpc_client.log_in_and_skip(fingerprint=self.wallet_fingerprint)
+        # if not res["success"]:
+        #     raise ValueError(f"Error logging in: {res['error']}. Make sure your config fingerprint is correct.")
+        # self.log.info(f"Logging in: {res}")
+        # res = await self.wallet_rpc_client.get_wallet_balance(self.wallet_id)
+        # self.log.info(f"Obtaining balance: {res}")
 
         self.scan_p2_singleton_puzzle_hashes = await self.store.get_pay_to_singleton_phs()
 
@@ -224,8 +224,8 @@ class Pool:
         if self.get_peak_loop_task is not None:
             self.get_peak_loop_task.cancel()
 
-        self.wallet_rpc_client.close()
-        await self.wallet_rpc_client.await_closed()
+        # self.wallet_rpc_client.close()
+        # await self.wallet_rpc_client.await_closed()
         self.node_rpc_client.close()
         await self.node_rpc_client.await_closed()
         await self.store.connection.close()
@@ -237,7 +237,7 @@ class Pool:
         while True:
             try:
                 self.blockchain_state = await self.node_rpc_client.get_blockchain_state()
-                self.wallet_synced = await self.wallet_rpc_client.get_synced()
+                # self.wallet_synced = await self.wallet_rpc_client.get_synced()
                 await asyncio.sleep(30)
             except asyncio.CancelledError:
                 self.log.info("Cancelled get_peak_loop, closing")
