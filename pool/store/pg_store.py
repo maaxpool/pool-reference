@@ -75,9 +75,8 @@ class PGStore(AbstractPoolStore):
                 "launcher_id text,  /* farmer */"
                 "points bigint,     /* farmer's points */"
                 "delay_time bigint, /* delayed time */"
-                "timestamp bigint,  /* snapshot timestamp */
-                "ss_type smallint   /* 0: normal snapshot, 1: clear snapshot, 2: pool total */
-                )"
+                "timestamp bigint,  /* snapshot timestamp */"
+                "ss_type smallint   /* 0: normal snapshot, 1: clear snapshot, 2: pool total */)"
             )
         )
         await self.connection.execute("CREATE INDEX IF NOT EXISTS ss_launcher_id_index on maxi_points_ss(launcher_id)")
