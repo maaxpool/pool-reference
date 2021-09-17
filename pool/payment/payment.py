@@ -9,6 +9,7 @@ import os
 import yaml
 import time
 
+from chia.consensus.block_rewards import calculate_pool_reward
 from chia.rpc.wallet_rpc_client import WalletRpcClient
 from chia.types.coin_record import CoinRecord
 from chia.util.bech32m import decode_puzzle_hash
@@ -167,12 +168,17 @@ class Payment:
 
                 if len(coin_records) == 0:
                     self.log.info("No funds to distribute.")
-                    await asyncio.sleep(120)
+                    await asyncio.sleep(300)
                     continue
 
                 total_amount_claimed = sum([c.coin.amount for c in coin_records])
                 pool_coin_amount = int(total_amount_claimed * self.pool_fee)
                 amount_to_distribute = total_amount_claimed - pool_coin_amount
+
+                if total_amount_claimed < calculate_pool_reward(uint32(1)):  # 1.75 XCH
+                    self.log.info(f"Do not have enough funds to distribute: {total_amount_claimed}, skipping payout")
+                    await asyncio.sleep(120)
+                    continue
 
                 self.log.info(f"Total amount claimed: {total_amount_claimed / (10 ** 12)}")
                 self.log.info(f"Pool coin amount (includes blockchain fee) {pool_coin_amount  / (10 ** 12)}")
@@ -295,4 +301,4 @@ class Payment:
                 # TODO(pool): retry transaction if failed
                 error_stack = traceback.format_exc()
                 self.log.error(f"Unexpected error in submit_payment_loop: {e} {error_stack}")
-                await asyncio.sleep(60)
+                await asyncio.sleep(300)
