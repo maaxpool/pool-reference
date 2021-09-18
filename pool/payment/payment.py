@@ -259,6 +259,7 @@ class Payment:
                     )
                     self.log.info(f"payment record: {payment}")
                     await self.store.add_payment(payment)
+                    await asyncio.sleep(10)
 
                 # TODO(pool): make sure you have enough to pay the blockchain fee, this will be taken out of the pool
                 # fee itself. Alternatively you can set it to 0 and wait longer
