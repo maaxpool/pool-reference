@@ -83,7 +83,7 @@ class PoolServer:
             try:
                 res_object = await f(request)
                 if res_object is None:
-                    res_object = web.Response{}
+                    res_object = web.Response()
             except Exception as e:
                 tb = traceback.format_exc()
                 self.log.warning(f"Error while handling message: {tb}")
