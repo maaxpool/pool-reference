@@ -77,7 +77,11 @@ class Pool:
         self.config = config
         self.constants = constants
 
-        self.store: AbstractPoolStore = pool_store or PGStore()
+        if pool_config.get('store') == "MariadbPoolStore":
+            from .store.mariadb_store import MariadbPoolStore
+            self.store: AbstractPoolStore = pool_store or MariadbPoolStore()
+        else:
+            self.store: AbstractPoolStore = pool_store or SqlitePoolStore()
 
         self.pool_fee = pool_config["pool_fee"]
 
