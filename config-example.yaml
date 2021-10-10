@@ -1,3 +1,4 @@
+store: "PostgresPoolStore"
 pool_info:
   default_res: Chia reference pool
   name: The Reference Pool
