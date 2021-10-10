@@ -35,15 +35,22 @@ class Snapshot:
         self.snapshot_interval = pool_config["snapshot_interval"]
 
         self.create_payment_loop_task: Optional[asyncio.Task] = None
+        self.heart_beat_loop_task: Optional[asyncio.Task] = None
+
+        self.heart_beat_monitor_url = pool_config["heart_beat_monitor_url_snapshot"]
+        self.heart_beat_interval = int(pool_config.get("heart_beat_interval_snapshot", "30"))
 
     async def start(self):
         await self.store.connect()
 
         self.create_snapshot_loop_task = asyncio.create_task(self.create_snapshot_loop())
+        self.heart_beat_loop_task = asyncio.create_task(self.heart_beat_loop())
 
     async def stop(self):
         if self.create_snapstho_loop_task is not None:
             self.create_snapshot_loop_task.cancel()
+        if self.heart_beat_loop_task is not None:
+            self.heart_beat_loop_task.cancel()
 
         await self.store.connection.close()
 
@@ -67,3 +74,19 @@ class Snapshot:
                 error_stack = traceback.format_exc()
                 self.log.error(f"Unexpected error in create_snapshot_loop: {e} {error_stack}")
                 await asyncio.sleep(self.snapshot_interval)
+
+    async def heart_beat_loop(self):
+        """
+        Periodically send heart beat signal to uptime bot
+        """
+        while True:
+            try:
+                async with aiohttp.request('GET', self.heart_beat_monitor_url) as resp:
+                    assert resp.status == 200
+                await asyncio.sleep(self.heart_beat_interval)
+            except asyncio.CancelledError:
+                self.log.info("Cancelled heart_beat_loop, closing")
+                return
+            except Exception as e:
+                self.log.error(f"Unexpected error in heart_beat_loop: {e}")
+                await asyncio.sleep(self.heart_beat_interval)

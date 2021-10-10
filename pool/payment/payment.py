@@ -1,4 +1,5 @@
 import asyncio
+import aiohttp
 import logging
 import pathlib
 import traceback
@@ -82,11 +83,15 @@ class Payment:
         self.create_payment_loop_task: Optional[asyncio.Task] = None
         self.submit_payment_loop_task: Optional[asyncio.Task] = None
         self.get_peak_loop_task: Optional[asyncio.Task] = None
+        self.heart_beat_loop_task: Optional[asyncio.Task] = None
 
         self.node_rpc_client: Optional[FullNodeRpcClient] = None
         self.node_rpc_port = pool_config["node_rpc_port"]
         self.wallet_rpc_client: Optional[WalletRpcClient] = None
         self.wallet_rpc_port = pool_config["wallet_rpc_port"]
+
+        self.heart_beat_monitor_url = pool_config["heart_beat_monitor_url_payment"]
+        self.heart_beat_interval = int(pool_config.get("heart_beat_interval_payment", "30"))
 
     async def start(self):
         await self.store.connect()
@@ -109,6 +114,7 @@ class Payment:
         self.create_payment_loop_task = asyncio.create_task(self.create_payment_loop())
         self.submit_payment_loop_task = asyncio.create_task(self.submit_payment_loop())
         self.get_peak_loop_task = asyncio.create_task(self.get_peak_loop())
+        self.heart_beat_loop_task = asyncio.create_task(self.heart_beat_loop())
 
         self.pending_payments = asyncio.Queue()
 
@@ -119,6 +125,8 @@ class Payment:
             self.submit_payment_loop_task.cancel()
         if self.get_peak_loop_task is not None:
             self.get_peak_loop_task.cancel()
+        if self.heart_beat_loop_task is not None:
+            self.heart_beat_loop_task.cancel()
 
         self.wallet_rpc_client.close()
         await self.wallet_rpc_client.await_closed()
@@ -303,3 +311,19 @@ class Payment:
                 error_stack = traceback.format_exc()
                 self.log.error(f"Unexpected error in submit_payment_loop: {e} {error_stack}")
                 await asyncio.sleep(300)
+
+    async def heart_beat_loop(self):
+        """
+        Periodically send heart beat signal to uptime bot
+        """
+        while True:
+            try:
+                async with aiohttp.request('GET', self.heart_beat_monitor_url) as resp:
+                    assert resp.status == 200
+                await asyncio.sleep(self.heart_beat_interval)
+            except asyncio.CancelledError:
+                self.log.info("Cancelled heart_beat_loop, closing")
+                return
+            except Exception as e:
+                self.log.error(f"Unexpected error in heart_beat_loop: {e}")
+                await asyncio.sleep(self.heart_beat_interval)
