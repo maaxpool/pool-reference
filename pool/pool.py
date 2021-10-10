@@ -49,7 +49,6 @@ from .store.abstract import AbstractPoolStore
 from .store.sqlite_store import SqlitePoolStore
 from .record import FarmerRecord
 from .util import error_dict, RequestMetadata
-from pool.store.pg_store import PGStore
 
 class Pool:
     def __init__(
@@ -77,7 +76,10 @@ class Pool:
         self.config = config
         self.constants = constants
 
-        if pool_config.get('store') == "MariadbPoolStore":
+        if pool_config.get('store') == "PostgresPoolStore":
+            from .store.pg_store import PGStore
+            self.store: AbstractPoolStore = PGStore()
+        elif pool_config.get('store') == "MariadbPoolStore":
             from .store.mariadb_store import MariadbPoolStore
             self.store: AbstractPoolStore = pool_store or MariadbPoolStore()
         else:
