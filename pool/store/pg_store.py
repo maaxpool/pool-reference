@@ -112,9 +112,20 @@ class PGStore(AbstractPoolStore):
         )
 
     async def add_farmer_record(self, farmer_record: FarmerRecord, metadata: RequestMetadata):
-        await self.connection.execute(f"DELETE FROM maxi_farmer WHERE launcher_id=$1", farmer_record.launcher_id.hex())
         await self.connection.execute(
-            f"INSERT INTO maxi_farmer VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)",
+            f"INSERT INTO maxi_farmer VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) "
+            f"ON CONFLICT(launcher_id) DO UPDATE SET "
+            f"p2_singleton_puzzle_hash = EXCLUDED.p2_singleton_puzzle_hash, "
+            f"delay_time = EXCLUDED.delay_time, "
+            f"delay_puzzle_hash = EXCLUDED.delay_puzzle_hash,"
+            f"authentication_public_key = EXCLUDED.authentication_public_key,"
+            f"singleton_tip = EXCLUDED.singleton_tip,"
+            f"singleton_tip_state = EXCLUDED.singleton_tip_state,"
+            f"points = EXCLUDED.points,"
+            f"difficulty = EXCLUDED.difficulty,"
+            f"payout_instructions = EXCLUDED.payout_instructions,"
+            f"is_pool_member = EXCLUDED.is_pool_member,"
+            f"create_at = EXCLUDED.create_at",
             *(
                 farmer_record.launcher_id.hex(),
                 farmer_record.p2_singleton_puzzle_hash.hex(),
