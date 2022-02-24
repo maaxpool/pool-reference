@@ -183,7 +183,7 @@ class PGStore(AbstractPoolStore):
             return []
         puzzle_hashes_db = tuple([ph.hex() for ph in list(puzzle_hashes)])
         return [self._row_to_farmer_record(row) for row in await self.connection.fetch(
-            f'SELECT * from maxi_farmer WHERE p2_singleton_puzzle_hash in (${",$".join(map(str, range(1, len(puzzle_hashes_db)+1)))}) ',
+            f'SELECT * from maxi_farmer WHERE is_pool_member = 1 and p2_singleton_puzzle_hash in (${",$".join(map(str, range(1, len(puzzle_hashes_db)+1)))}) ',
             *puzzle_hashes_db,
         )]
 
