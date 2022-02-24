@@ -222,6 +222,9 @@ class RewardCollector:
                             self.blockchain_state["peak"].height,
                             ph_to_coins[rec.p2_singleton_puzzle_hash],
                             self.constants.GENESIS_CHALLENGE,
+                            self.claim_fee,
+                            self.wallet_rpc_client,
+                            self.default_target_puzzle_hash,
                         )
 
                         if spend_bundle is None:
