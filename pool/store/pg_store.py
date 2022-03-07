@@ -265,13 +265,17 @@ class PGStore(AbstractPoolStore):
         )
 
     async def add_reward_record(self, reward: RewardRecord):
-        await self.connection.execute(
-            f"INSERT INTO maxi_rewards_tx(launcher_id, claimable, height, coins, timestamp) VALUES($1, $2, $3, $4, $5)",
-            *(
-                reward.launcher_id.hex(),
-                reward.claimable,
-                reward.height,
-                reward.coins.hex(),
-                reward.timestamp
-            ),
-        )
+        try:
+            await self.connection.execute(
+                f"INSERT INTO maxi_rewards_tx(launcher_id, claimable, height, coins, timestamp) VALUES($1, $2, $3, $4, $5)",
+                *(
+                    reward.launcher_id.hex(),
+                    reward.claimable,
+                    reward.height,
+                    reward.coins.hex(),
+                    reward.timestamp
+                ),
+            )
+        except asyncpg.exceptions.UniqueViolationError:
+            print("dup rewards tx: ", reward.height)
+            pass
