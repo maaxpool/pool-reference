@@ -93,7 +93,7 @@ class RewardCollector:
             self.config["self_hostname"], uint16(self.wallet_rpc_port), DEFAULT_ROOT_PATH, self.config
         )
         self.blockchain_state = await self.node_rpc_client.get_blockchain_state()
-        res = await self.wallet_rpc_client.log_in_and_skip(fingerprint=self.wallet_fingerprint)
+        res = await self.wallet_rpc_client.log_in(fingerprint=self.wallet_fingerprint)
         if not res["success"]:
             raise ValueError(f"Error logging in: {res['error']}. Make sure your config fingerprint is correct.")
         self.log.info(f"Logging in: {res}")
